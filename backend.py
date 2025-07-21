@@ -14,27 +14,40 @@ collection = db["videos"]
 @app.get("/video/search")
 async def search_video(search_term: str):
     try:
-        video_doc = await collection.find_one(
-            {"title": {"$regex": search_term, "$options": "i"}}
-        )
+        video_doc = await collection.find_one({
+            "title": {"$regex": search_term, "$options": "i"},
+            "s3_path": {"$regex": r"\.mp4$", "$options": "i"}
+        })
         # video_doc = await collection.find_one({"title": search_term}) #This one is case sensitive so resume != Resume
         
-        return JSONResponse(
-            status_code=200,
-            content={
-                "result": "success",
-                "message": "Video found.",
-                "data": {
-                    "video_path": video_doc["s3_path"]
+        if video_doc:
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "result": "success",
+                    "message": "Video found.",
+                    "data": {
+                        "video_path": video_doc["s3_path"]
+                    }
                 }
-            }
-        )
+            )
+        else:
+            raise HTTPException(
+                status_code=404,
+                detail={
+                    "result": "failure",
+                    "message": "No matching video found.",
+                    "data": None
+                }
+            )
+    except HTTPException:
+        raise  # Re-raise HTTPException as-is
     except:
         raise HTTPException(
-            status_code=404,
+            status_code=500,
             detail={
                 "result": "failure",
-                "message": "No matching video found.",
+                "message": "Database error occurred.",
                 "data": None
             }
         )
