@@ -13,14 +13,12 @@ collection = db["videos"]
 
 @app.get("/video/search")
 async def search_video(search_term: str):
-    
-    video_doc = await collection.find_one(
-        {"title": {"$regex": search_term, "$options": "i"}}
-    )
-    # video_doc = await collection.find_one({"title": search_term}) #This one is case sensitive so resume != Resume
-
-
-    if video_doc:
+    try:
+        video_doc = await collection.find_one(
+            {"title": {"$regex": search_term, "$options": "i"}}
+        )
+        # video_doc = await collection.find_one({"title": search_term}) #This one is case sensitive so resume != Resume
+        
         return JSONResponse(
             status_code=200,
             content={
@@ -31,7 +29,7 @@ async def search_video(search_term: str):
                 }
             }
         )
-    else:
+    except:
         raise HTTPException(
             status_code=404,
             detail={
